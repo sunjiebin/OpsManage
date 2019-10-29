@@ -49,7 +49,7 @@ function AssetsSelect(name,dataList,selectIds){
 			switch(name)
 			{
 			case "custom":
-				var text = dataList[i]["detail"]["ip"]+ ' | ' + dataList[i]["project"]+' | '+dataList[i]["service"]	
+				var text = dataList[i]["detail"]["ip"]	
 				var count = 0
 				for (var j=0; j <selectIds.length; j++){
 					if(selectIds[j]==dataList[i]["id"]){
@@ -107,7 +107,7 @@ function requests(method,url,async){
 
 function makeFileDownloadResultTable(dataList){
 	var trHtml = '';
-	for (var i = 1; i < dataList.length; ++i) {
+	for (var i = 0; i < dataList.length; ++i) {
 		if (dataList[i]["islnk"] ){
 			var button = '<button type="button" class="btn btn-xs btn-default" disabled><abbr title="软连接不支持下载"><i class="fa  fa-cloud-download"></i></button>';
 		}else if(dataList[i]["size"] > 500 ){
@@ -179,7 +179,7 @@ $(document).ready(function() {
 		$("#order_status").html(orderStatus[data["data"]["order_status"]])
 		$("#filedownload_order_subject").val(data["data"]["order_subject"]).attr("disabled","")
 		$("#order_content").val(data["data"]["detail"]["download"]["order_content"]).attr("disabled","")
-		AssetsSelect("custom",requests('get','/api/assets/'),data["data"]["detail"]["download"]["dest_server"])
+		AssetsSelect("custom",requests('get','/api/assets/?assets_type=ser'),data["data"]["detail"]["download"]["dest_server"])
 		$("#dest_path").val(data["data"]["detail"]["download"]["dest_path"]).attr("disabled","")
 		$("#ans_uuid").val(uuid())
 		switch(data["data"]["order_status"])
@@ -198,7 +198,8 @@ $(document).ready(function() {
 		$("select[name='custom'] option:selected").each(function(){
 			serverList.push($(this).val());
         });		
-		if (value>=1 && serverList.length){			
+		if (value>=1 && serverList.length){	
+			$("#result").html('<i class="fa fa-spinner"> 服务器正在处理...</i>');
 	    	$.ajax({  
 	            cache: true,  
 	            type: "POST",  
@@ -220,7 +221,6 @@ $(document).ready(function() {
 	            success: function(response) {  
 	            	btnObj.attr('disabled',false);
 					if (response["code"] == 200){
-						console.log(response["data"])
 						makeFileDownloadResultTable(response["data"])
 					}
 					else {

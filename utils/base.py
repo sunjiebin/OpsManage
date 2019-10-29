@@ -12,6 +12,27 @@ from email.mime.multipart import MIMEMultipart
 from django.core.serializers.json import DjangoJSONEncoder
 from .logger import logger
 from functools import wraps
+import ply.lex as lex, re
+
+def extract_table_name_from_sql(sql_str):
+    q = re.sub(r"/\*[^*]*\*+(?:[^*/][^*]*\*+)*/", "", sql_str)
+
+    lines = [line for line in q.splitlines() if not re.match("^\s*(--|#)", line)]
+
+    q = " ".join([re.split("--|#", line)[0] for line in lines])
+
+    tokens = re.split(r"[\s)(;]+", q)
+
+    result = []
+    get_next = False
+    for token in tokens:
+        if get_next:
+            if token.lower() not in ["", "select"]:
+                result.append(token)
+            get_next = False
+        get_next = token.lower() in ["from", "join","into","table","update"]
+
+    return result
 
 def method_decorator_adaptor(adapt_to, *decorator_args, **decorator_kwargs):
     def decorator_outer(func):
@@ -42,37 +63,6 @@ def file_iterator(file_name, chunk_size=512):
             break 
     f.close()
 
-def sendEmail(e_from,e_to,e_host,e_passwd,e_sub="It's a test email.",e_content="test",cc_to=None,attachFile=None):
-    msg = MIMEMultipart() 
-    EmailContent = MIMEText(e_content,_subtype='html',_charset='utf-8')
-    msg['Subject'] = "%s " % e_sub
-    msg['From'] = e_from
-    if e_to.find(',') == -1:
-        msg['To'] = e_to
-    else: 
-        e_to = e_to.split(',')
-        msg['To'] = ';'.join(e_to)  
-    if cc_to:
-        if cc_to.find(',') == -1:
-            msg['Cc'] = cc_to
-        else: 
-            cc_to= cc_to.split(',')
-            msg['Cc'] = ';'.join(cc_to)       
-    msg['date'] = time.strftime('%Y %H:%M:%S %z')
-    try:
-        if attachFile:
-            EmailContent = MIMEApplication(open(attachFile,'rb').read()) 
-            EmailContent["Content-Type"] = 'application/octet-stream'
-            fileName = os.path.basename(attachFile)
-            EmailContent["Content-Disposition"] = 'attachment; filename="%s"' % fileName
-        msg.attach(EmailContent)
-        smtp=smtplib.SMTP()
-        smtp.connect(e_host)
-        smtp.login(e_from,e_passwd)
-        smtp.sendmail(e_from,e_to,msg.as_string())
-        smtp.quit()
-    except Exception as ex:
-        print(ex)
   
 def radString(length=8,chars=string.ascii_letters+string.digits):
     return ''.join([choice(chars) for i in range(length)])
@@ -94,7 +84,10 @@ def pwd():
     return os.getcwd()   
 
 def cmds(cmds):
-    return subprocess.getstatusoutput(cmds)
+    status,result = subprocess.getstatusoutput(cmds)
+    if status > 0:
+        return {"status":"failed","msg":result}
+    return {"status":"succeed","msg":result}
 
 def chown(user,path):
     cmd = "chown -R {user}:{user} {path}".format(user=user,path=path)
@@ -107,8 +100,8 @@ def makeToken(strs):
 
 def lns(spath,dpath):
     if spath and dpath:
-        rmLn = "rm -rf {dpath}".format(dpath=dpath)
-        status,result = subprocess.getstatusoutput(rmLn)
+#         rmLn = "rm -rf {dpath}".format(dpath=dpath)
+#         status,result = subprocess.getstatusoutput(rmLn)
         mkLn = "ln -s {spath} {dpath}".format(spath=spath,dpath=dpath)
         return subprocess.getstatusoutput(mkLn)
     else:return (1,"缺少路径")    

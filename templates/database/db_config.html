@@ -7,6 +7,7 @@
     <link href="/static/datatable/datatables.net-scroller-bs/css/scroller.bootstrap.min.css" rel="stylesheet"> 
     <link rel="stylesheet" href="/static/css/bootstrap-select.css"> 
     <link rel="stylesheet" href="/static/css/jquery.orgchart.css">	
+    <link href="/static/css/doublebox-bootstrap.css" rel="stylesheet"> 
 	<style type="text/css"> 
 		td.details-control {
 		    background: url('/static/images/details_open.png') no-repeat center center; */
@@ -23,6 +24,9 @@
 			width: 100%;
 			height: 200px;
 	   }
+          .modal-header{
+            cursor:move;
+          }		   
 		#chart-container { text-align: left; }
 
 	    .orgchart td.left, .orgchart td.right, .orgchart td.top { border-color: #aaa; }
@@ -52,12 +56,6 @@
                       </li>
                       <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
-                        <ul class="dropdown-menu" role="menu">
-                          <li><a href="#">Settings 1</a>
-                          </li>
-                          <li><a href="#">Settings 2</a>
-                          </li>
-                        </ul>
                       </li>
                       <li><a class="close-link"><i class="fa fa-close"></i></a>
                       </li>
@@ -73,9 +71,9 @@
 					                <th>ID</th>
 					                <th>环境类型</th>
 					                <th>架构类型</th>
-					                <th>所属项目</th>
-					                <th>业务类型</th>
-					                <th>数据库名</th>
+					                <th>业务归属</th>
+					                <th>数据库类型</th>
+					                <th>数据版本</th>
 					                <th>数据库地址</th>
 					                <th>账户</th>
 					                <th>端口</th>
@@ -100,12 +98,6 @@
                       </li>
                       <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
-                        <ul class="dropdown-menu" role="menu">
-                          <li><a href="#">Settings 1</a>
-                          </li>
-                          <li><a href="#">Settings 2</a>
-                          </li>
-                        </ul>
                       </li>
                       <li><a class="close-link"><i class="fa fa-close"></i></a>
                       </li>
@@ -145,9 +137,10 @@
 										 <label class="col-sm-2 control-label" >架构类型<span class="required">*</span></label> 
 										 <div class="col-sm-10">
 										     <select required="required" class="selectpicker form-control" data-live-search="true"  data-size="10" data-width="100%" name="db_mode" id="db_mode" autocomplete="off">
-										   		<option value="1" name="db_mode" >单例</option>
-												<option value="2" name="db_mode" >主从</option>
-												<option value="3" name="db_mode" >PXC</option>				
+										   		<option value="single" name="db_mode" >单例</option>
+												<option value="ms" name="db_mode" >主从</option>
+												<option value="pxc" name="db_mode" >PXC</option>	
+												<option value="master" name="db_mode" >主库</option>			
 											 </select>	
 										 </div>					 	
 									</div>
@@ -155,22 +148,11 @@
 									<div class="form-group">
 										 <label class="col-sm-2 control-label" > 所属项目<span class="required">*</span></label>
 										 <div class="col-sm-10">
-											  <select required="required" class="selectpicker form-control" data-live-search="true"  data-size="10" data-width="100%"  id="db_project"  onchange="javascript:oBtProjectSelect();" autocomplete="off">
-											   		<option selected="selected" value="">请选择一个项目</option>
-														{% for s in assets.projectList %}
-															<option value="{{s.id}}" name="db_project">{{s.project_name}}</option>
-														{% endfor %}								   							
+											  <select required="required" class="selectpicker form-control" data-live-search="true"  data-size="10" data-width="100%"  id="db_business"  onchange="javascript:oBtBusinessSelect();" autocomplete="off">
+											   		<option selected="selected" value="">请选择一个项目</option>							   							
 											  </select>
 										 </div>
-									</div>	
-									<div class="form-group">
-										 <label class="col-sm-2 control-label" > 业务类型<span class="required">*</span></label>		
-										 <div class="col-sm-10">								 
-											 <select required="required" class="selectpicker form-control" data-live-search="true"  data-size="10" data-width="100%"  id="db_service" onchange="javascript:AssetsTypeSelect('service','db_service');" autocomplete="off">
-												  <option selected="selected" value="">请选择一个业务</option>								   							
-											 </select>
-										 </div>
-									</div>										
+									</div>									
 									<div class="form-group" >
 										 <label required="required" class="col-sm-2 control-label" >数据库IP<span class="required">*</span></label>
 										 <div class="col-sm-10">
@@ -188,11 +170,17 @@
 												<option  value="r/w">读写</option>						   		
 											 </select>
 										 </div>
-									</div>															
+									</div>	
 									<div class="item form-group" >
-										 <label  class="col-sm-2 control-label" > 数据库名<span class="required">*</span></label>
+										 <label  class="col-sm-2 control-label" > 数据库类型<span class="required">*</span></label>
 										 <div class="col-sm-10">
-										 	<input class="form-control" type="text" value="" placeholder="不能为空" name="db_name" id="db_name"  required/>
+										 	<input class="form-control" type="text" value="MySQL" placeholder="不能为空" name="db_type" id="db_type"  required/>
+										 </div>
+									</div>																								
+									<div class="item form-group" >
+										 <label  class="col-sm-2 control-label" > 数据库版本<span class="required">*</span></label>
+										 <div class="col-sm-10">
+										 	<input class="form-control" type="text" value="" placeholder="不能为空" name="db_name" id="db_version"  required/>
 										 </div>
 									</div>						
 									<div class="item form-group" >
@@ -317,26 +305,26 @@
 								<legend>
 									<i class="fa  fa-paper-plane"></i> Database
 								</legend>
-								<form role="form" method="post" id="add_user_db">	
+								<form role="form" method="post" id="add_user_db">
 									<div class="form-group" >
 										 	<label > 用户<i class="fa fa-info-circle" data-toggle="tooltip" title="选择用户"></i></label>
 											<select required="required" class="selectpicker form-control" data-live-search="true"  data-size="10" data-width="100%" name="user" id="user"  autocomplete="off">
-											   	<option selected="selected" value="">请选择一个用户</option>
-<!-- 												{% for s in assets.userList %}
-													<option value="{{s.id}}" name="db_project">{{s.username}}</option>
-												{% endfor %} -->								   							
+											   	<option selected="selected" value="">请选择一个用户</option>							   							
 											</select>												
+									</div>										
+									<div class="form-group" >
+										 <label> 数据库服务器<i class="fa fa-info-circle" data-toggle="tooltip" title="选择数据库服务器"></i></label>
+										 <select required="required" class="selectpicker form-control" data-live-search="true" name="db_server" id="db_server"  data-size="10" data-selected-text-format="count > 3"  data-width="100%"   autocomplete="off">
+										   	<option >请选择一个数据库服务器</option>							   							
+										 </select>											
 									</div>	
 									<div class="form-group" >
-										 <label> 数据库<i class="fa fa-info-circle" data-toggle="tooltip" title="选择数据库"></i></label>
-										 <select multiple required="required" class="selectpicker form-control" data-live-search="true" name="db" id="db"  data-size="10" data-selected-text-format="count > 3"  data-width="100%"  id="db"  autocomplete="off">
-										   	<option >请选择一个数据库</option>
-<!-- 											{% for ds in databaseList %}
-												<option value="{{ds.id}}">{{ds.db_env}} | {{ds.db_assets.server_assets.ip}} | {{ds.db_name}} | {{ds.db_mark}}</option>
-											{% endfor %}	 -->							   							
+										 <label> 数据库名<i class="fa fa-info-circle" data-toggle="tooltip" title="选择数据库名"></i></label>
+										 <select multiple required="required" class="selectpicker form-control" data-live-search="true" name="db_server_db" id="db_server_db"  data-size="10" data-selected-text-format="count > 3"  data-width="100%"    autocomplete="off">
+										   	<option >请选择一个数据库</option>							   							
 										 </select>											
-									</div>																														
-									<lable><button type="button" value="" class="btn btn-default" id="add_user_db_btn">保存</button></lable>
+									</div>																																															
+									<lable><button type="button" value="" class="btn btn-default" id="add_user_db_btn" disabled>保存</button></lable>
 									<lable><button type="button" value="" class="btn btn-default" id="modf_user_db_btn" value="" style="display:none;">修改</button></lable>
 									<button type="reset" class="btn btn-default">撤销</button>
 								</form>
@@ -345,17 +333,10 @@
 								<legend>
 									<i class="fa  fa-paper-plane-o"></i> 用户数据库列表
 								</legend>
-								<table  width="100%" class="table table-striped table-bordered" id="user_database_list">						
+								<table  class="table table-striped table-bordered" id="user_database_list">						
 		                                <thead>
 												<tr>
-													<th>
-														<label>
-															<span class="lbl"></span>
-														</label>
-														ID
-													</th>
-													<th>用户</th>
-													<th>环境类型</th>	
+													<th>用户</th>														
 													<th>数据库</th>	
 													<th>数据库地址</th>		
 													<th>端口</th>		
@@ -365,45 +346,6 @@
 												</tr>											    
 		                                </thead>
 		                                <tbody>
-	<!-- 	                                	{% for ds in userDbList %}
-		                                		<tr>
-			                                		<td class="text-center" class="text-center">
-			                                			{{ds.id}}
-			                                		</td>
-			                                		<td class="text-center" abbr="{{ds.user.id}}">
-			                                			<span title="{{ds.user.id}}">{{ds.user.username}}</span>
-			                                		</td>			                                		
-					                        		<td class="text-center">
-					                    				{% if ds.db.db_env == "beta"  %}               					
-					                    					<span class="label label-success">测试</span>
-					                    				{% else %}
-					                    					<span class="label label-danger">生产</span>
-					                    				{% endif %}	                        			
-					                        		</td> 	
-			                                		<td class="text-center">
-			                                			{{ds.db.db_name}}
-			                                		</td>					                        		
-			                                		<td class="text-center">
-			                                			{{ds.db.db_assets.server_assets.ip}}
-			                                		</td>
-			                                		<td class="text-center">
-			                                			{{ds.db.db_port}}
-			                                		</td>	
-					                        		<td class="text-center">
-					                    				{{ds.db.db_mark}}
-					                        		</td>	 	
-					                        		<td class="text-center">
-					                    				{{ds.db.db_rw}}
-					                        		</td>					                                				                                				                                		
-			                                		<td class="text-center">
-								                          <div class="btn-group btn-group-sm">																							
-								                          	<button type="button" name="btn-userdb-edit" value="{{ds.id}}" class="btn btn-default" aria-label="Justify"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-								                            <button type="button" name="btn-userdb-delete" value="{{ds.id}}" class="btn btn-default" aria-label="Justify"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
-								                            </button>
-								                          </div>																					                                			
-			                                		</td>	
-		                                		</tr>                                			                                		                                			                                			                                			                                		
-		                                	{% endfor %} -->
 		                                </tbody>
 		                       	</table>															 	
 							 </div>							 
@@ -412,6 +354,94 @@
                   </div>
                 </div>
               </div>
+              
+        <div  class="modal fade bs-example-modal-user-table" data-backdrop="static"  tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title" id="myUserTablesModalLabel">用户权限</h4>
+              </div>
+              <div class="modal-body ue-container">
+              
+				 <select multiple="multiple" size="10" name="user-table-list" class="demo"> </select>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" id="userTableListSubmit"  class="btn btn-primary">保存</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div  class="modal fade bs-example-modal-user-grant" data-backdrop="static"  tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title" id="myUserGrantsModalLabel">用户权限</h4>
+              </div>
+              <div class="modal-body ue-container">
+              
+				 <select multiple="multiple" size="10" name="user-grants-list" class="demo"> </select>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" id="userGrantsListSubmit"  class="btn btn-primary">保存</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+         
+        <div  class="modal fade bs-example-modal-database-import" data-backdrop="static"  tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title" id="databaseImportModalLabel">导入数据库</h4>
+              </div>
+              <div class="modal-body ue-container">
+					<div class="form-group">
+					    <div class="input-group col-xs-12">
+					        <div class="input-group-btn">
+					            <button type="button" class="btn btn-default" data-dismiss="modal" disabled>数据库名称</button>
+					        </div>
+					        <input id="server_database_input" type="text" class="form-control" placeholder="输入数据库名称">
+							<span class="input-group-btn">
+							    <button class="btn btn-success" id="server_database_submit" value="">添加</button>
+							</span>					        
+					    </div>
+					</div>              
+					<table width="100%" class="table table-striped table-bordered" id="server_database_list">						
+                               <thead>
+									<tr>
+										<th>名称</th>
+										<th>大小(MB)</th>		
+										<th class="text-center">操作</th>
+									</tr>											    
+                               </thead>
+                               <tbody>
+                               </tbody>
+                      </table>				 
+
+              </div>
+              <div class="modal-footer">
+              </div>
+
+            </div>
+          </div>
+        </div>         
+              
         </div>                 
 {% endblock %}
 {% block js-content %}
@@ -423,6 +453,8 @@
     <script src="/static/datatable/datatables.net-buttons/js/buttons.flash.min.js"></script>
     <script src="/static/datatable/datatables.net-buttons/js/buttons.html5.min.js"></script>
     <script src="/static/datatable/datatables.net-buttons/js/buttons.print.min.js"></script>	
+    <script src="/static/js/doublebox/doublebox-bootstrap.js"></script>
+    <script src="/static/js/dragable/dragable.js"></script> 
 	<script src="/static/js/database/db.js"></script>
 	<script src="/static/validator/validator.js"></script>
 	<script type="text/javascript" src="/static/js/orgchart/jquery.orgchart.js"></script>

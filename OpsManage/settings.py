@@ -12,11 +12,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os
-from kombu import Queue,Exchange
+import sys, os
 import ldap
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType, PosixGroupType
-import os
+
 try:
     import ConfigParser as conf
 except ImportError as e:
@@ -24,25 +23,12 @@ except ImportError as e:
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+
 config = conf.ConfigParser()
 config.read(os.path.join(BASE_DIR, 'conf/opsmanage.ini'))   
 
-''' celery config '''
-CELERY_QUEUES = (
-    Queue('default',Exchange('default'),routing_key='default'),
-    Queue('ansible',Exchange('ansible'),routing_key='ansible'),
-)
-CELERY_ROUTES = {
-    'tasks.celery_sql.*':{'queue':'default','routing_key':'default'},
-    'tasks.celery_assets.*':{'queue':'default','routing_key':'default'},
-    'tasks.celery_cron.*':{'queue':'default','routing_key':'default'},
-    'tasks.celery_sched.*':{'queue':'default','routing_key':'default'},
-    'tasks.celery_deploy.AnsibleScripts':{'queue':'ansible','routing_key':'ansible'},
-    'tasks.celery_deploy.AnsiblePlayBook':{'queue':'ansible','routing_key':'ansible'},
-}
-CELERY_DEFAULT_QUEUE = 'default'
-CELERY_DEFAULT_EXCHANGE_TYPE = 'topic'
-CELERY_DEFAULT_ROUTING_KEY = 'default'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -51,7 +37,7 @@ CELERY_DEFAULT_ROUTING_KEY = 'default'
 SECRET_KEY = 'i)&2z^y%0w1o-%h3da1*$!9@5hx^dzp-_w&rx&4k6ml)l24&ev'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 REDSI_KWARGS_LPUSH = {"host":config.get('redis', 'host'),'port':config.get('redis', 'port'),'db':config.get('redis', 'ansible_db')}
@@ -81,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'mptt',
     'channels',    
     'OpsManage',
     'navbar',
@@ -91,11 +78,12 @@ INSTALLED_APPS = [
     'orders',
     'wiki',
     'filemanage',
-    'apps',
+    'cicd',
     'sched',
     'django_celery_beat',
     'django_celery_results',
-    'websocket'
+    'websocket',
+    'apply'
 ]
 
 MIDDLEWARE = [

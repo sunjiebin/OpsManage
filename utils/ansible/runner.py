@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding=utf-8 -*-
-import json,re
+import os,re
 from collections import Mapping,namedtuple
 from ansible import constants
 from ansible.playbook.play import Play
@@ -12,10 +12,7 @@ from ansible.executor.playbook_executor import PlaybookExecutor
 from ansible.utils.vars import load_extra_vars
 from ansible.utils.vars import load_options_vars
 from .callback import *
-from .inventory import MyInventory
-from dao.redisdb import DsRedis 
-from dao.dispos import DeploySaveResult
-from utils.logger import logger
+from .inventory import get_inventory
 
 
 
@@ -52,8 +49,8 @@ class ANSRunner(object):
         scp_extra_args=None,
         verbosity=None,
         syntax=False,        
-        redisKey=None,
-        mysqlKey=None
+        websocket=None,
+        background=None
     ):
         self.Options = namedtuple("Options", [
                                                 'listtags', 'listtasks', 'listhosts', 'syntax', 'connection',
@@ -91,10 +88,10 @@ class ANSRunner(object):
             check=check,
             diff=False
         )
-        self.redisKey = redisKey
-        self.mysqlKey = mysqlKey        
+        self.websocket = websocket      
+        self.background = background 
         self.loader = DataLoader()
-        self.inventory = MyInventory(resource=hosts)
+        self.inventory = get_inventory(hosts)
         self.variable_manager = VariableManager(self.loader, self.inventory)
         self.variable_manager.extra_vars = load_extra_vars(loader=self.loader, options=self.options)
         self.variable_manager.options_vars = load_options_vars(self.options, "")
@@ -102,7 +99,7 @@ class ANSRunner(object):
         
   
     def run_model(self,host_list, module_name, module_args):
-        self.callback = AdHoccallback(self.redisKey,self.mysqlKey)  
+        self.callback = AdHoccallback(self.websocket,self.background)  
         play_source = dict(
             name="Ansible Ad-hoc",
             hosts=host_list,
@@ -126,8 +123,7 @@ class ANSRunner(object):
             tqm.run(play)  
         except Exception as err: 
             logger.error(msg="run model failed: {err}".format(err=str(err)))
-            if self.redisKey:DsRedis.OpsAnsibleModel.lpush(self.redisKey,data=err)
-            if self.mysqlKey:DeploySaveResult.Model.insert(self.mysqlKey, err)              
+            if self.websocket:self.websocket.send(str(err))              
         finally:  
             if tqm is not None:  
                 tqm.cleanup()  
@@ -139,7 +135,7 @@ class ANSRunner(object):
         run ansible palybook 
         """   
         try: 
-            self.callback = Playbookcallback(self.redisKey,self.mysqlKey) 
+            self.callback = Playbookcallback(self.websocket,self.background) 
             extra_vars['host'] = ','.join(host_list)
             self.variable_manager.extra_vars = extra_vars            
             executor = PlaybookExecutor(  
@@ -153,8 +149,7 @@ class ANSRunner(object):
             executor.run()  
         except Exception as err: 
             logger.error(msg="run playbook failed: {err}".format(err=str(err)))
-            if self.redisKey:DsRedis.OpsAnsiblePlayBook.lpush(self.redisKey,data=err)
-            if self.mysqlKey:DeploySaveResult.PlayBook.insert(self.mysqlKey, err)            
+            if self.websocket:self.websocket.send(str(err))       
             return False
             
     def get_model_result(self):  
@@ -281,7 +276,7 @@ class ANSRunner(object):
                     data = {}                  
                     data['ip'] = x
                     try:
-                        data['msg'] = y.get('stdout').replace('\t\t','<br>').replace('\r\n','<br>').replace('\t','<br>')
+                        data['msg'] = y.get('stderr').replace('\t\t','<br>').replace('\r\n','<br>').replace('\t','<br>')
                     except:
                         data['msg'] = None
                     if y.get('rc') == 0:
@@ -316,17 +311,20 @@ class ANSRunner(object):
             if success:
                 for x,y in success.items():
                     data = {}
+                    data['msg'] = "success"
                     data['ip'] = x
-                    if y.get('invocation'):
-                        data['msg'] = "Ansible %s with %s execute success." % (module_name,module_args)
-                        data['status'] = 'succeed'
+                    if y.get('invocation') and y.get('stdout'):
+                        data['msg'] = y.get('stdout').replace('\t\t','<br>').replace('\r\n','<br>').replace('\t','<br>').replace('\n','<br>')                          
+                    data['status'] = 'succeed'    
                     data_list.append(data) 
                     
             if failed:
-                for x,y in failed.items():   
-                    data = {}                  
+                for x,y in failed.items():                      
+                    data = {}   
+                    data['msg'] = y.get("msg")               
                     data['ip'] = x
-                    data['msg'] = y.get('msg')
+                    if y.get('stderr'):
+                        data['msg'] = y.get('stderr') + y.get('msg')
                     data['status'] = 'failed'
                     data_list.append(data)  
                                                   
@@ -362,8 +360,8 @@ if __name__ == '__main__':
 #                     } 
 #                 } 
     
-    rbt = ANSRunner(resource,redisKey='1')
-    rbt.run_model(host_list=["192.168.1.235","192.168.1.234","192.168.1.233"],module_name='yum',module_args="name=htop state=present")
+    rbt = ANSRunner(resource)
+    rbt.run_model(host_list=["192.168.1.235","192.168.1.234","192.168.1.233"],module_name='ping',module_args="")
 #     data = rbt.get_model_result()
 #     print data
 #     print data

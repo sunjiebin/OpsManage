@@ -162,7 +162,7 @@ function AssetsSelect(name,dataList,selectIds){
 	var binlogHtml = '<select required="required" class="selectpicker form-control" data-live-search="true"  data-size="10" data-width="100%" '+ action +' name="'+ name +'"autocomplete="off"><option value="">选择一个进行操作</option>'
 	var selectHtml = '';
 	for (var i=0; i <dataList.length; i++){
-		var text = dataList[i]["detail"]["ip"]+ ' | ' + dataList[i]["project"]+' | '+dataList[i]["service"]				
+		var text = dataList[i]["detail"]["ip"]				
 		if(selectIds==dataList[i]["id"]){
 			selectHtml += '<option selected="selected" value="'+ dataList[i]["id"] +'">'+text +'</option>' 	
 		}else{
@@ -241,6 +241,7 @@ function InitDataTable(tableId,dataList,buttons,columns,columnDefs){
 		    		"columns": columns,
 		    		"columnDefs" :columnDefs,			  
 		    		"language" : language,
+		    		"iDisplayLength": 20,
 		    		"order": [[ 0, "ase" ]],
 		    		"autoWidth": false	    			
 		    	});
@@ -338,6 +339,7 @@ function InitJobsDataTable(tableId,url,buttons,columns,columnDefs){
 		    		"columns": columns,
 		    		"columnDefs" :columnDefs,			  
 		    		"language" : language,
+		    		"iDisplayLength": 20,
 		    		"order": [[ 0, "ase" ]],
 		    		"autoWidth": false	    			
 		    	});
@@ -412,6 +414,7 @@ function InitJobsLogsDataTable(tableId,url,buttons,columns,columnDefs){
 		    		"columns": columns,
 		    		"columnDefs" :columnDefs,			  
 		    		"language" : language,
+		    		"iDisplayLength": 20,
 		    		"order": [[ 0, "ase" ]],
 		    		"autoWidth": false	    			
 		    	});
@@ -800,7 +803,7 @@ $(document).ready(function() {
 	
 	
 	if($("#sched_server").length){
-		var dataList = requests('get','/api/assets/')
+		var dataList = requests('get','/api/assets/?assets_type=ser')
 		AssetsSelect("sched_server",dataList)
 	}	
 

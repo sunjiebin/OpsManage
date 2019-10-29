@@ -76,17 +76,21 @@ class DeployScript(DataHandle):
         except Exception as ex:
             return "查询部署脚本{ids}，失败{ex}".format(ids=ids,ex=ex)
         script_file = os.getcwd()  + str(script.script_file)
+        content = ''
         if os.path.exists(script_file):
-            content = ''
             with open(script_file,"r") as f:
                 for line in f.readlines(): 
                     content =  content + line 
-            script.script_contents = content  
+        script.script_contents = content
         return  json.dumps(self.convert_to_dict(script))         
        
     
     def scriptList(self):
-        return Deploy_Script.objects.all()
+        dataList = []
+        for ds in Deploy_Script.objects.all():
+            dataList.append(ds.to_json())
+        return dataList       
+
         
     def createScript(self,request):
         fileName = '/upload/scripts/script-{ram}'.format(ram=uuid.uuid4().hex[0:8]) 
@@ -102,7 +106,7 @@ class DeployScript(DataHandle):
                                           script_file=fileName,
                                           script_user=request.user.id,
                                           script_inventory_groups=self.change(request.POST.get('inventory_groups')),
-                                          script_service=self.change(request.POST.get('service')),
+                                          script_business=self.change(request.POST.get('business')),
                                           script_type=request.POST.get('server_model')
                                           )
         except Exception as ex:
@@ -125,7 +129,7 @@ class DeployScript(DataHandle):
                                           script_args=QueryDict(request.body).get('script_args'),
                                           script_user=request.user.id,
                                           script_inventory_groups=self.change(QueryDict(request.body).get('inventory_groups')),
-                                          script_service=self.change(QueryDict(request.body).get('service')),
+                                          script_business=self.change(QueryDict(request.body).get('business')),
                                           script_type=QueryDict(request.body).get('server_model'),
                                           update_date = datetime.now()
                                           )
@@ -154,17 +158,20 @@ class DeployPlaybook(DataHandle):
         except Exception as ex:
             return "查询部署剧本{ids}，失败{ex}".format(ids=ids,ex=ex)
         playbook_file = os.getcwd()  + str(playbook.playbook_file)
+        content = ''
         if os.path.exists(playbook_file):
-            content = ''
             with open(playbook_file,"r") as f:
                 for line in f.readlines(): 
                     content =  content + line 
-            playbook.playbook_contents = content  
+        playbook.playbook_contents = content  
         return  json.dumps(self.convert_to_dict(playbook))         
        
     
     def playbookList(self):
-        return Deploy_Playbook.objects.all()
+        dataList = []
+        for ds in Deploy_Playbook.objects.all():
+            dataList.append(ds.to_json())
+        return dataList
         
     def createPlaybook(self,request):
         fileName = '/upload/playbook/playbook-{ram}'.format(ram=uuid.uuid4().hex[0:8]) 
@@ -177,10 +184,11 @@ class DeployPlaybook(DataHandle):
                                           playbook_desc = request.POST.get('playbook_desc'),
                                           playbook_server=json.dumps(request.POST.getlist('server[]')),
                                           playbook_group=self.change(request.POST.get('group')),
+                                          playbook_tags=self.change(request.POST.get('tags')),
                                           playbook_file=fileName,
                                           playbook_user=request.user.id,
                                           playbook_inventory_groups=self.change(request.POST.get('inventory_groups')),
-                                          playbook_service=self.change(request.POST.get('service')),
+                                          playbook_business=self.change(request.POST.get('business')),
                                           playbook_type=request.POST.get('server_model')
                                           )
         except Exception as ex:
@@ -201,8 +209,9 @@ class DeployPlaybook(DataHandle):
                                           playbook_desc = QueryDict(request.body).get('playbook_desc'),
                                           playbook_group=QueryDict(request.body).get('group',0),
                                           playbook_user=request.user.id,
+                                          playbook_tags=QueryDict(request.body).get('tags'),
                                           playbook_inventory_groups=self.change(QueryDict(request.body).get('inventory_groups')),
-                                          playbook_service=self.change(QueryDict(request.body).get('service')),
+                                          playbook_business=self.change(QueryDict(request.body).get('business')),
                                           playbook_type=QueryDict(request.body).get('server_model'),
                                           playbook_vars=QueryDict(request.body).get('playbook_vars'),
                                           update_date = datetime.now()
