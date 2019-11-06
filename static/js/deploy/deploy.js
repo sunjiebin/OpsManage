@@ -1073,9 +1073,10 @@ $(document).ready(function() {
 	    	} 	
 	    });	
 	    //new
+        //当点击语言类型里面的几个按钮时，触发下面的函数。
 	    if($("#deployScriptType").length){
 		    $("button[name='btn-deploy-scripts']").on('click', function() {
-		    	var model = $(this).val();
+		    	var model = $(this).val();  //获取按钮的value值，如sh,python,perl
 		    	switch(model)
 		    		{
 		    			case "sh":
@@ -1084,7 +1085,7 @@ $(document).ready(function() {
 		    				break;
 		    			case "python":
 		    				var aceEditAdd = setAceEditMode("compile-editor-add","ace/mode/" + model,"ace/theme/terminal");
-		    				aceEditAdd.insert("#!/usr/bin/python");
+		    				aceEditAdd.insert("#!/usr/bin/python3");
 		    				break;
 		    			case "perl":
 		    				var aceEditAdd = setAceEditMode("compile-editor-add","ace/mode/" + model,"ace/theme/terminal");
@@ -1211,7 +1212,7 @@ $(document).ready(function() {
     	    };
 
     	    websocket.onerror = function(event) {
-    	    	console.log(event)
+    	    	console.log(event);
     	    	websocket.close();
 				out_print.append('\n服务器连接异常\n\n');
     	    };    
@@ -1222,11 +1223,11 @@ $(document).ready(function() {
 	    })
 
 	    $('#run_deploy_script').on('click', function() {
-			var btnObj = $(this);
-			btnObj.attr('disabled',true);
-			var form = document.getElementById('deployScriptRun');
-		    var contents = aceEditAdd.getSession().getValue(); 
-		    var script_name = document.getElementById("script_name").value;
+			var btnObj = $(this);   //$(this)表示“执行”按钮本身
+			btnObj.attr('disabled',true);   //当点击“执行”按钮后，设置按钮disabled属性，实现执行过程中不可再次点击的效果
+			var form = document.getElementById('deployScriptRun');  //获取到整个form表单元素
+		    var contents = aceEditAdd.getSession().getValue();  // getValue()获取到编辑器里面的内容
+		    var script_name = document.getElementById("script_name").value; //获取脚本名称
 		    if ( contents.length == 0 || script_name.length == 0){
 	        	new PNotify({
 	                title: 'Warning!',
@@ -1234,24 +1235,31 @@ $(document).ready(function() {
 	                type: 'warning',
 	                styling: 'bootstrap3'
 	            }); 
-		    	btnObj.removeAttr('disabled');
+		    	btnObj.removeAttr('disabled');  //上面的执行完毕后，移除“执行”按钮的disabled属性，即可以再次点击按钮了
 		    	return false;
 		    };
-			var ansible_server = new Array();
+			var ansible_server = new Array();   //Array()建立一个数组，相当于python里面的列表
+			//获取到select标签中name="custom"的标签，并获取到下面被选定的标签，循环得到里面的value值，并添加到ansible_server数组中去
 			$("select[name='custom'] option:selected").each(function(){
 				ansible_server.push($(this).val());
 	        });
-			
+			console.log(ansible_server);
+
+			//let 定义变量，和var类似，但是作用域更小，为块级作用域，且只能被定义一次
+			//location.protocol获取当前url协议，如http:/https:，当为https:时，ws_scheme=wss，当不为https:时，ws_scheme=ws
 		    let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+			//window.location.host得到访问的域名,randromChat为前面makeRandomId()生成的随机值
+            //WebSocket表示通过websocket在浏览器和服务的建立连接进行通信，这个要优于通过ajax轮询的方式。
 		    let websocket = new WebSocket(ws_scheme + '://' + window.location.host + "/ws/ansible/script/" + randromChat + '/');
 		    let out_print = $("#result");
-		    
-		    websocket.onopen = function () {
-		    	out_print.html('服务器正在处理，请稍等。。。\n\n');
-		    	let data = {
+		    websocket.onopen = function () {   //onopen表示在建立连接时触发函数
+		    	out_print.html('服务器正在处理，请稍等。。。\n\n');   //在id=result的div里面插入一个html，这里用.text也可以
+		    	let data = {		//生成要发送的数据
 					'script_name':$("#script_name").val(),
+                     //找到id=server_model标签下面被选中的标签，获取里面的value的值，如value=bussiness
 					'server_model':$('#server_model option:selected').val(),
-					'business':$('select[name="business"] option:selected').val(),
+					//找到select标签中name="business"的标签，并获取到select标签下面option标签中有selected标签的value的值
+                    'business':$('select[name="business"] option:selected').val(),
 					'group':$('select[name="group"] option:selected').val(),
 					'tags':$('select[name="tags"] option:selected').val(),
 					'inventory_groups':$('select[name="inventory_groups"] option:selected').val(),
@@ -1261,20 +1269,20 @@ $(document).ready(function() {
 					'debug':$('#deploy_debug option:selected').val(),
 					'custom':ansible_server
 				}
-		    	websocket.send(JSON.stringify(data));
+		    	websocket.send(JSON.stringify(data));	//将数据序列化后，通过websocket发送到服务器
 		    };
 
-		    websocket.onmessage = function (event) {
+		    websocket.onmessage = function (event) {	//当收到消息时，执行append操作，将数据追加到输出框里面
 		    	out_print.append(event.data+'\n')
 		    };
 
-		    websocket.onerror = function(event) {
+		    websocket.onerror = function(event) {		//当服务的返回错误时，执行的操作
 		    	console.log(event)
 		    	websocket.close();
 				out_print.append('\n服务器连接异常\n\n');
 		    };    
 		    
-		    websocket.onclose = function () {
+		    websocket.onclose = function () {		//当websocket关闭时，移除disabled属性，按钮重新变得可以点击
 		    	btnObj.removeAttr('disabled');
 		    }			    
 		        	

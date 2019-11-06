@@ -1,0 +1,62 @@
+
+在selection标签中获取到选定的标签
+    <select class="selectpicker form-control" name="business" data-selected-text-format="count > 5" data-live-search="true" data-width="100%" onchange="javascript:oBtProjectSelect(this);" required="" tabindex="-98">
+        <option value="" disabled="">选择一个进行操作</option>
+        <option selected="selected" value="1">开发环境/web</option>
+        <option value="2">开发环境/redis</option>
+        <option value="3">测试环境/web</option>
+        <option value="4">开发环境/centos7</option>
+    </select>
+
+    执行：
+    $('select[name="business"] option:selected').val()
+    "1"
+    $('select[name="business"] option:selected').text()
+    "开发环境/web"
+
+switch 语句用于基于不同条件执行不同动作。
+    比如下面的当model=sh 或 model=python 时会执行不同的赋值操作
+		    	var model = $(this).val();  //获取按钮的value值，如sh,python,perl
+		    	switch(model)
+		    		{
+		    			case "sh":
+		    				var aceEditAdd = setAceEditMode("compile-editor-add","ace/mode/" + model,"ace/theme/terminal");
+		    				aceEditAdd.insert("#!/bin/bash");
+		    				break;
+		    			case "python":
+		    				var aceEditAdd = setAceEditMode("compile-editor-add","ace/mode/" + model,"ace/theme/terminal");
+		    				aceEditAdd.insert("#!/usr/bin/python");
+		    				break;
+		    			case "perl":
+		    				var aceEditAdd = setAceEditMode("compile-editor-add","ace/mode/" + model,"ace/theme/terminal");
+		    				aceEditAdd.insert("#!/usr/bin/perl");
+		    				break;
+		    			default:
+		    				var aceEditAdd = setAceEditMode("compile-editor-add","ace/mode/sh","ace/theme/terminal");
+		    				aceEditAdd.insert("#!/bin/bash");
+		    		}
+
+ace editor编辑器是一个web浏览器语法高亮的代码编辑器，可以嵌入到js中
+
+Array()用于建立一个空的数组，push用于向数组里面追加数据
+			var ansible_server = new Array();   //Array()建立一个数组，相当于python里面的列表
+			//获取到select标签中name="custom"的标签，并获取到下面被选定的标签，循环得到里面的value值，并添加到ansible_server数组中去
+			$("select[name='custom'] option:selected").each(function(){
+				ansible_server.push($(this).val());
+	        });
+			console.log(ansible_server);
+
+给变量赋值的方法
+    当为https时，赋值为wss，当不为https时，赋值ws
+			//let 定义变量，和var类似，但是作用域更小，为块级作用域，且只能被定义一次
+			//location.protocol获取当前url协议，如http:/https:，当为https:时，ws_scheme=wss，当不为https:时，ws_scheme=ws
+		    let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+
+浏览器和服务器建立socket通信
+		    //window.location.host得到访问的域名,randromChat为前面makeRandomId()生成的随机值
+            //WebSocket表示通过websocket在浏览器和服务的建立连接进行通信，这个要优于通过ajax轮询的方式。
+		    let websocket = new WebSocket(ws_scheme + '://' + window.location.host + "/ws/ansible/script/" + randromChat + '/');
+		    websocket.onopen = function () {   //onopen表示在建立连接时触发函数
+		    	out_print.html('服务器正在处理，请稍等。。。\n\n');   //在id=result的div里面插入一个html，这里用.text也可以
+		        .....}
+
